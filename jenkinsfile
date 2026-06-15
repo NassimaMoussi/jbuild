@@ -13,7 +13,7 @@ node {
     }
 
     stage('Run') {
-        sh "docker run -d --name run-${env.BUILD_ID} -p 85:80 ${IMAGE}"
+        sh "docker run -d --name run-${env.BUILD_ID} -p 86:80 ${IMAGE}"
         sh "docker exec run-${env.BUILD_ID} curl http://localhost"
     }
 
