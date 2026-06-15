@@ -1,28 +1,26 @@
 node {
 
-    def app
+    def registryProjet = 'registry.gitlab.com/nassmima/registrydocker'
+    def IMAGE = "${registryProjet}:version.${env.BUILD_ID}"
 
-    try {
+    stage('Clone') {
+        git branch: 'main', url: 'https://github.com/NassimaMoussi/jbuild.git'
+    }
 
-        stage('Clone') {
-            checkout scm
+    stage('Build') {
+        def img = docker.build("${IMAGE}", '.')
+        env.IMG = img.id
+    }
+
+    stage('Run') {
+        sh "docker run -d --name run-${env.BUILD_ID} -p 80:80 ${IMAGE}"
+        sh "docker exec run-${env.BUILD_ID} curl http://localhost"
+    }
+
+    stage('Push') {
+        docker.withRegistry('https://registry.gitlab.com', 'reg1') {
+            def img = docker.image("${IMAGE}")
+            img.push('latest')
         }
-
-        stage('Build image') {
-            app = docker.build("nassima/nginx")
-        }
-
-        stage('Run image') {
-            sh '''
-            docker rm -f nginx_test || true
-            docker ps
-            docker run -d -p 8081:80 --name nginx_test nassima/nginx
-            sleep 5
-            curl -f http://127.0.0.1:8081
-            '''
-        }
-
-    } finally {
-        sh 'docker rm -f nginx_test || true'
     }
 }
